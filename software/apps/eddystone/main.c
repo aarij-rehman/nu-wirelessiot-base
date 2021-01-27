@@ -1,6 +1,6 @@
-// BLE Advertisement Raw app
+// BLE Advertisement Name app
 //
-// Sends a BLE advertisement with raw bytes
+// Sends a BLE advertisement with device name
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,7 +16,7 @@ static simple_ble_config_t ble_config = {
         .platform_id       = 0x4E,   // used as 4th octect in device BLE address
         .device_id         = 0xAABB, // must be unique on each device you program!
         .adv_name          = "CS397/497", // used in advertisements if there is room
-        .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS),
+        .adv_interval      = MSEC_TO_UNITS(2000, UNIT_0_625_MS),
         .min_conn_interval = MSEC_TO_UNITS(500, UNIT_1_25_MS),
         .max_conn_interval = MSEC_TO_UNITS(1000, UNIT_1_25_MS),
 };
@@ -29,7 +29,7 @@ simple_ble_app_t* simple_ble_app;
 
 
 int main(void) {
-
+  
   printf("Board started. Initializing BLE: \n");
 
   // Setup BLE
@@ -37,10 +37,8 @@ int main(void) {
   simple_ble_app = simple_ble_init(&ble_config);
 
   // Start Advertising
-  uint8_t ble_data[BLE_GAP_ADV_SET_DATA_SIZE_MAX] = {0x02, 0x01, 0x06, 0x06, 0x09, 0x61, 0x61, 0x72, 0x69, 0x6a, 0x03, 0xFF, 0xe0, 0x00};
-
-  simple_ble_adv_raw(ble_data, 14);
-  printf("Started BLE advertisements\n");
+  simple_ble_es_with_name("google.com");
+  printf("Started BLE advertisements with name %s\n", ble_config.adv_name);
 
   while(1) {
     power_manage();
