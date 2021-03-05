@@ -9,16 +9,25 @@
 #include "nrf_power.h"
 
 // Pin configurations
-#define LED NRF_GPIO_PIN_MAP(0,13)
 #define UART_RX              NRF_GPIO_PIN_MAP(0, 8)
 #define UART_TX              NRF_GPIO_PIN_MAP(0, 6)
-#define UART_TX_BUF_SIZE     256
-#define UART_RX_BUF_SIZE     256
+#define UART_TX_BUF_SIZE     512
+#define UART_RX_BUF_SIZE     512
 #define MAX_TEST_DATA_BYTES     (15U)   
+
+// Define
+#define SSID "APT P2"
+#define PWD "nestor123"
+
+// Global Buffer
+struct buffer
+{
+  char data[256]; 
+  size_t size; 
+} bigby;
 
 // error handler for UART
 void uart_error_handle (app_uart_evt_t * p_event) {
-  uint8_t ret;
   if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR) 
     {
     printf("communicatoin error \n");
@@ -33,14 +42,11 @@ void uart_error_handle (app_uart_evt_t * p_event) {
     {
       printf("data ready \n");
     }
-  else if (p_event->evt_type == APP_UART_TX_EMPTY) 
-    {
-      //printf("TX empty \n");
-    }
   else if (p_event->evt_type == APP_UART_DATA) 
     {
-      app_uart_get(&ret);
-      printf("%c", ret);
+      app_uart_get(&(bigby.data[bigby.size]));
+      bigby.size++;
+      printf("%c", bigby.data[bigby.size]);
     }
 }
 
@@ -75,26 +81,49 @@ void uart_init(void) {
 
 }
 
-int main(void) {
-
-  // init led
-  nrf_gpio_cfg_output(LED);
-  nrf_gpio_pin_set(LED);
-
-  // init uart
-  uart_init();
-  char* arg =  "AT+CWMODE=2\r\n";
-  uint8_t* data = (uint8_t *) arg;
-
-  // Send data
-  nrf_delay_ms(1000);
+void esp_send(const char* command) {
+  uint8_t len = strlen(command); 
+  uint8_t* data = (uint8_t *) command;
   uint32_t i = 0;
-  while (i < strlen(arg)) { 
-    printf("sending %c\n", data[i]);
+  while (i < len) { 
+    printf("sending %c \n", data[i]);
     while (app_uart_put(data[i]) != NRF_SUCCESS);
     i++;
   } 
-  printf("Response: ");
+  nrf_delay_ms(100);
+}
+
+
+void esp_init() { 
+  char connect[128];
+  esp_send("AT+CWMODE_DEF=1\r\n");
+  sprintf(connect, "AT+CWJAP_DEF\"%s\",\"%s\"\r\n",SSID, PWD);
+  esp_send(connect);
+  nrf_delay_ms(10000);
+}
+int esp_get_ping() { 
+  esp_send("AT+PING=\"www.google.com\"\r\n");
+  return 5;
+}
+int esp_get_rssi() { 
+  esp_send("AT+CWJAP?\r\n");
+  esp_wait();
+  // parse the buffer
+  // zero the buffer
+
+  return 5;
+}
+// waits until the ESP is done processing
+void esp_wait() { 
+
+}
+int main(void) {
+  // init uart
+  uart_init();
+  esp_init();
+  esp_get_rssi();
+
+
   while (1) {
     nrf_delay_ms(1000);
   }
