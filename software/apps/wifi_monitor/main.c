@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "app_uart.h"
@@ -20,12 +21,11 @@
 #define PWD "nestor123"
 
 // Global Buffer
-struct buffer
+struct B
 {
   char data[256]; 
   size_t size; 
-} bigby;
-
+} buf;
 // error handler for UART
 void uart_error_handle (app_uart_evt_t * p_event) {
   if (p_event->evt_type == APP_UART_COMMUNICATION_ERROR) 
@@ -44,9 +44,12 @@ void uart_error_handle (app_uart_evt_t * p_event) {
     }
   else if (p_event->evt_type == APP_UART_DATA) 
     {
-      app_uart_get(&(bigby.data[bigby.size]));
-      bigby.size++;
-      printf("%c", bigby.data[bigby.size]);
+      uint8_t ret;
+      app_uart_get(&ret);
+      char* ch = (char *) &ret;
+      strcpy(&(buf.data[buf.size]), ch);
+      printf("%c", buf.data[buf.size]);
+      buf.size++;
     }
 }
 
@@ -88,40 +91,60 @@ void esp_send(const char* command) {
   while (i < len) { 
     printf("sending %c \n", data[i]);
     while (app_uart_put(data[i]) != NRF_SUCCESS);
+
     i++;
   } 
-  nrf_delay_ms(100);
 }
 
+// waits for a command to finish and prepares for the next one
+int esp_wait() { 
+  while (strstr((const char *) &buf.data, "OK\r\n") == NULL) {
+    printf("waiting 1 second\n");
+    printf("buffer: %s\n", buf.data);
+    nrf_delay_ms(1000); // wait until you read "OK" in the response
+  }
+  // reset the buffer
+  printf("resetting buffer");
+  printf("old buffer %s", buf.data);
+  buf.data[0] = 0;
+  buf.size = 0;
+  printf("new buffer %s", buf.data);
+  return 0;
+}
 
 void esp_init() { 
   char connect[128];
-  esp_send("AT+CWMODE_DEF=1\r\n");
-  sprintf(connect, "AT+CWJAP_DEF\"%s\",\"%s\"\r\n",SSID, PWD);
+  esp_send("AT+CWMODE=1\r\n"); // set ESP to client mode
+  nrf_delay_ms(3000);
+  
+  sprintf(connect, "AT+CWJAP=\"%s\",\"%s\"\r\n",SSID, PWD); // connect to network
+  printf("connect is: %s \n", connect);
   esp_send(connect);
   nrf_delay_ms(10000);
 }
+
 int esp_get_ping() { 
   esp_send("AT+PING=\"www.google.com\"\r\n");
+  nrf_delay_ms(1000);
+
   return 5;
 }
+
 int esp_get_rssi() { 
   esp_send("AT+CWJAP?\r\n");
-  esp_wait();
-  // parse the buffer
-  // zero the buffer
+  nrf_delay_ms(1000);
+  char *ptr;
+  ptr = strrchr((const char*) buf, "-");
 
   return 5;
 }
-// waits until the ESP is done processing
-void esp_wait() { 
 
-}
 int main(void) {
   // init uart
   uart_init();
-  esp_init();
   esp_get_rssi();
+  esp_get_ping();
+
 
 
   while (1) {
