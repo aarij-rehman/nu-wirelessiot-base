@@ -118,25 +118,31 @@ void esp_init() {
   nrf_delay_ms(3000);
   
   sprintf(connect, "AT+CWJAP=\"%s\",\"%s\"\r\n",SSID, PWD); // connect to network
-  printf("connect is: %s \n", connect);
   esp_send(connect);
   nrf_delay_ms(10000);
 }
-
+// clear the buffer
+void reset_buffer() {
+  buf.size = 0;
+  memset(buf.data, 0, sizeof(buf.data));
+}
 int esp_get_ping() { 
+  int ret;
   esp_send("AT+PING=\"www.google.com\"\r\n");
-  nrf_delay_ms(1000);
+  nrf_delay_ms(2000);
 
-  return 5;
+  sscanf(&(buf.data[buf.size-10]), "%d", &ret); // extract the ping
+  reset_buffer()
+  return ret;
 }
 
 int esp_get_rssi() { 
+  int ret;
   esp_send("AT+CWJAP?\r\n");
   nrf_delay_ms(1000);
-  char *ptr;
-  ptr = strrchr((const char*) buf, "-");
-
-  return 5;
+  sscanf(&(buf.data[buf.size-10]), "%d", &ret); // extract the rssi
+  reset_buffer();
+  return ret * (-1);
 }
 
 int main(void) {
