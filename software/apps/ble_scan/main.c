@@ -52,7 +52,7 @@ void ble_evt_adv_report(ble_evt_t const* p_ble_evt) {
     printf("Lenght of Data: %i\n", value_len);
     printf("Data: ");
     for (int i=0; i<value_len-1; i++){ 
-      printf("%c", adv_buf[i+5]);
+      printf("%d", adv_buf[i+5]);
     }
   }
 }
@@ -69,9 +69,7 @@ int main(void) {
   scanning_start();
 
   // go into low power mode
-  while(1) {
-    power_manage();
-  }
+ 
 }
 
 

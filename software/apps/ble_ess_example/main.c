@@ -28,6 +28,19 @@ static simple_ble_service_t environmental_sensing_service = {{
               0x00,0x10,0x00,0x00,0x1A,0x18,0x00,0x00}
 }};
 
+// Create 5 characteristics
+static simple_ble_char_t elevation_char = {.uuid16 = 0x2A6C};
+static simple_ble_char_t pressure_char = {.uuid16 = 0x2A6D};
+static simple_ble_char_t temperature_char = {.uuid16 = 0x2A6E};
+static simple_ble_char_t humidity_char = {.uuid16 = 0x2A6F};
+static simple_ble_char_t true_wind_speed_char = {.uuid16 = 0x2A70};
+
+static uint32_t elevation = 1000 & 0xFFFFFF;
+static uint32_t pressure = 30;
+static uint16_t temperature = 4;
+static uint16_t humidity = 74;
+static uint16_t true_wind_speed = 11;
+
 /*******************************************************************************
  *   State for this application
  ******************************************************************************/
@@ -47,6 +60,28 @@ int main(void) {
 
   simple_ble_add_service(&environmental_sensing_service);
 
+  // add the characteristics
+  simple_ble_add_characteristic(1, 0, 0, 0,
+      sizeof(elevation), (uint8_t*)&elevation,
+      &environmental_sensing_service, &elevation_char);
+
+  simple_ble_add_characteristic(1, 0, 0, 0,
+      sizeof(pressure), (uint8_t*)&pressure,
+      &environmental_sensing_service, &pressure_char);
+
+  simple_ble_add_characteristic(1, 0, 0, 0,
+      sizeof(temperature), (uint8_t*)&temperature,
+      &environmental_sensing_service, &temperature_char);
+
+  simple_ble_add_characteristic(1, 0, 0, 0,
+      sizeof(humidity), (uint8_t*)&humidity,
+      &environmental_sensing_service, &humidity_char);
+
+  simple_ble_add_characteristic(1, 0, 0, 0,
+      sizeof(true_wind_speed), (uint8_t*)&true_wind_speed,
+      &environmental_sensing_service, &true_wind_speed_char);
+
+      
   // Start Advertising
   simple_ble_adv_only_name();
 
@@ -54,4 +89,3 @@ int main(void) {
     power_manage();
   }
 }
-
